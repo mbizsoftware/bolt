@@ -9,6 +9,7 @@ import * as messages from './utils/messages';
 import sortObject from 'sort-object';
 import { BoltError } from './utils/errors';
 import type { configDependencyType } from './types';
+import symlinkPackageDependencies from './utils/symlinkPackageDependencies';
 
 export default class Package {
   filePath: string;
@@ -171,6 +172,38 @@ export default class Package {
 
   getVersion() {
     return this.config.getVersion();
+  }
+
+  async updateVersion(newVersion: string) {
+    await this.config.write({
+      ...this.config.getConfig(),
+      version: newVersion
+    });
+  }
+
+  async updateInternalDependencies(packageNames: string[], version: string) {
+    let curVersion = this.config.getVersion();
+    await this.updateVersion(version);
+    for (let dependencyType of DEPENDENCY_TYPES) {
+      let deps = this.config.getDeps(dependencyType);
+      if (!!deps) {
+        let updatedDependencies = Object.fromEntries(
+          packageNames.filter(a => !!deps[a]).map(key => [key, version])
+        );
+        await this._updateDependencies(dependencyType, {
+          ...deps,
+          ...updatedDependencies
+        });
+      }
+    }
+    logger.info(
+      'Version Updated : ' +
+        this.getName() +
+        ' ' +
+        curVersion +
+        ' -> ' +
+        version
+    );
   }
 
   getBins(): Array<{ name: string, filePath: string }> {

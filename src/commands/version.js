@@ -1,16 +1,24 @@
 // @flow
 import * as options from '../utils/options';
 import { BoltError } from '../utils/errors';
-
-export type VersionOptions = {};
+import { showVersion, updateVersion } from '../utils/versionUtil';
+import type { VersionOptions } from '../utils/versionUtil';
 
 export function toVersionOptions(
   args: options.Args,
   flags: options.Flags
 ): VersionOptions {
-  return {};
+  return {
+    cwd: options.string(flags.cwd, 'cwd'),
+    version: args[0]
+  };
 }
 
 export async function version(opts: VersionOptions) {
-  throw new BoltError('Unimplemented command "version"');
+  if (!opts.version) {
+    return await showVersion(opts);
+  }
+
+  await updateVersion(opts);
+  // throw new BoltError('Unimplemented command "version"');
 }
